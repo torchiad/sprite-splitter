@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Spritesheet Splitter</title>
     <!-- Add the Bootstrap CSS -->
@@ -37,7 +36,7 @@
             margin: auto;
             padding: 20px;
             /* Remove the box radius (curvature) */
-            /*border-radius: 5px;*/
+            border-radius: 0; /* Make the corners flat */
             background-color: rgba(255, 255, 255, 0.9);
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
@@ -61,16 +60,19 @@
             opacity: 0.6;
             pointer-events: none;
         }
+
         .spinner-border {
             display: none;
         }
+
         .btn-generating .spinner-border {
-            display: block;
+            display: inline-block;
         }
 
         .btn-generating .btn-text {
             display: none;
         }
+
         .title-wrapper {
             display: flex;
             align-items: center;
@@ -85,10 +87,8 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 8px;
-            border-bottom: 1px solid #ffffff;
-            padding-bottom: 5px;
-            margin-right: 10px;
             color: #ffffff;
+            text-decoration: underline;
         }
 
         .scissors-icon {
@@ -107,21 +107,19 @@
     <div class="container">
         <form id="spritesheetForm" class="text-center">
             <div class="form-group row">
-                <label for="spritesheetImage"
-                    class="col-sm-3 col-form-label font-weight-bold text-left">Spritesheet</label>
+                <label for="spritesheetImage" class="col-sm-3 col-form-label font-weight-bold text-left">Spritesheet</label>
                 <div class="col-sm-9">
-                    <input type="file" class="form-control" id="spritesheetImage" accept="image/png, image/jpeg"
-                        required>
+                    <input type="file" class="form-control rounded-0" id="spritesheetImage" accept="image/png, image/jpeg" required>
                 </div>
             </div>
             <hr />
             <div class="form-group row">
                 <label for="spritesheetJson" class="col-sm-3 col-form-label font-weight-bold text-left">JSON</label>
                 <div class="col-sm-9">
-                    <input type="file" class="form-control" id="spritesheetJson" accept=".json" required>
+                    <input type="file" class="form-control rounded-0" id="spritesheetJson" accept=".json" required>
                 </div>
             </div>
-            <button type="button" class="btn btn-primary" id="generateButton" onclick="splitAndDownloadSprites()">
+            <button type="button" class="btn btn-primary rounded-0" id="generateButton" onclick="splitAndDownloadSprites()">
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 <span class="btn-text">Generate and Download ZIP</span>
             </button>
@@ -211,5 +209,6 @@
         }
     </script>
 </body>
-
 </html>
+
+

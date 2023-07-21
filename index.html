@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spritesheet Splitter</title>
+</head>
+<body>
+  <h1>Spritesheet Splitter</h1>
+  <form id="spritesheetForm">
+    <label for="spritesheetImage">Spritesheet Image:</label>
+    <input type="file" id="spritesheetImage" accept="image/png, image/jpeg" required><br>
+    <label for="spritesheetJson">Spritesheet JSON:</label>
+    <input type="file" id="spritesheetJson" accept=".json" required><br>
+    <button type="button" onclick="splitAndDownloadSprites()">Split and Download ZIP</button>
+  </form>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
+  <script>
+    function splitAndDownloadSprites() {
+      const spritesheetFile = document.getElementById("spritesheetImage").files[0];
+      const jsonFile = document.getElementById("spritesheetJson").files[0];
+
+      if (!spritesheetFile || !jsonFile) {
+        alert("Please select both spritesheet image and JSON files.");
+        return;
+      }
+
+      const spritesheetReader = new FileReader();
+      spritesheetReader.onload = function () {
+        const spritesheetUrl = URL.createObjectURL(spritesheetFile);
+
+        const jsonReader = new FileReader();
+        jsonReader.onload = function () {
+          const data = JSON.parse(jsonReader.result);
+
+          const zip = new JSZip();
+          const outputFolder = "output"; // Change this to your desired output folder name
+
+          Object.keys(data.frames).forEach((spriteName) => {
+            const spriteInfo = data.frames[spriteName];
+            const { x, y, w: width, h: height } = spriteInfo.frame;
+
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+
+            const spritesheetImg = new Image();
+            spritesheetImg.onload = function () {
+              ctx.drawImage(spritesheetImg, x, y, width, height, 0, 0, width, height);
+
+              // Convert canvas image to data URL and add to the ZIP
+              const imgDataUrl = canvas.toDataURL("image/png");
+              zip.file(`${spriteName}.png`, imgDataUrl.substr(imgDataUrl.indexOf(',') + 1), { base64: true });
+            };
+            spritesheetImg.src = spritesheetUrl;
+          });
+
+          // Generate the ZIP file and create a download link
+          zip.generateAsync({ type: "blob" }).then((content) => {
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(content);
+            link.download = "spritesheet_sprites.zip";
+            link.textContent = "Download ZIP";
+            link.style.display = "none"; // Hide the link
+            document.body.appendChild(link);
+
+            // Trigger the click event to initiate the download
+            link.click();
+
+            // Clean up and remove the link
+            document.body.removeChild(link);
+          });
+        };
+        jsonReader.readAsText(jsonFile);
+      };
+      spritesheetReader.readAsArrayBuffer(spritesheetFile);
+    }
+  </script>
+</body>
+</html>

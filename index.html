@@ -4,12 +4,12 @@
   <title>Spritesheet Splitter</title>
   <!-- Add the Bootstrap CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <!-- Add the "Poppins" font from Google Fonts -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
   <style>
     /* Custom styles for the spritesheet splitter */
     body {
-        font-family: "Poppins", Arial, sans-serif;
-    
+      font-family: "Poppins", Arial, sans-serif; /* Use the "Poppins" font as the primary font */
       padding: 20px;
       background: linear-gradient(-45deg, #78c0e0, #f6b9b2);
       background-size: 500% 500%;
@@ -32,11 +32,11 @@
       max-width: 500px;
       margin: auto;
       padding: 20px;
-      border-radius: 0px;
+      /* Remove the box radius (curvature) */
+      /*border-radius: 5px;*/
       background-color: rgba(255, 255, 255, 0.9);
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
-
 
     .form-group {
       margin-bottom: 20px;
@@ -45,7 +45,6 @@
     .btn-primary {
       background-color: #2b3d66;
       border-color: #2b3d66;
-      border-radius: 0px;
     }
 
     .btn-primary:hover,
@@ -63,14 +62,14 @@
           <div class="form-group row">
             <label for="spritesheetImage" class="col-sm-3 col-form-label font-weight-bold text-left">Spritesheet</label>
             <div class="col-sm-9">
-              <input type="file" class="form-control rounded-0" id="spritesheetImage" accept="image/png, image/jpeg" required>
+              <input type="file" class="form-control" id="spritesheetImage" accept="image/png, image/jpeg" required>
             </div>
           </div>
           <hr />
           <div class="form-group row">
             <label for="spritesheetJson" class="col-sm-3 col-form-label font-weight-bold text-left">JSON</label>
             <div class="col-sm-9">
-              <input type="file" class="form-control rounded-0" id="spritesheetJson" accept=".json" required>
+              <input type="file" class="form-control" id="spritesheetJson" accept=".json" required>
             </div>
           </div>
           <button type="button" class="btn btn-primary" onclick="splitAndDownloadSprites()">Generate and Download ZIP</button>
@@ -81,7 +80,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
   <script>
-    function splitAndDownloadSprites() {
+    async function splitAndDownloadSprites() {
       const spritesheetFile = document.getElementById("spritesheetImage").files[0];
       const jsonFile = document.getElementById("spritesheetJson").files[0];
 
@@ -91,7 +90,7 @@
       }
 
       const spritesheetReader = new FileReader();
-      spritesheetReader.onload = function () {
+      spritesheetReader.onload = async function () {
         const spritesheetUrl = URL.createObjectURL(spritesheetFile);
 
         const jsonReader = new FileReader();
@@ -101,7 +100,7 @@
           const zip = new JSZip();
           const outputFolder = "output"; // Change this to your desired output folder name
 
-          Object.keys(data.frames).forEach((spriteName) => {
+          await Promise.all(Object.keys(data.frames).map(async (spriteName) => {
             const spriteInfo = data.frames[spriteName];
             const { x, y, w: width, h: height } = spriteInfo.frame;
 
@@ -110,16 +109,13 @@
             canvas.height = height;
             const ctx = canvas.getContext("2d");
 
-            const spritesheetImg = new Image();
-            spritesheetImg.onload = function () {
-              ctx.drawImage(spritesheetImg, x, y, width, height, 0, 0, width, height);
+            const spritesheetImg = await loadImage(spritesheetUrl);
+            ctx.drawImage(spritesheetImg, x, y, width, height, 0, 0, width, height);
 
-              // Convert canvas image to data URL and add to the ZIP
-              const imgDataUrl = canvas.toDataURL("image/png");
-              zip.file(`${spriteName}.png`, imgDataUrl.substr(imgDataUrl.indexOf(',') + 1), { base64: true });
-            };
-            spritesheetImg.src = spritesheetUrl;
-          });
+            // Convert canvas image to data URL and add to the ZIP
+            const imgDataUrl = canvas.toDataURL("image/png");
+            zip.file(`${spriteName}.png`, imgDataUrl.substr(imgDataUrl.indexOf(',') + 1), { base64: true });
+          }));
 
           // Generate the ZIP file and create a download link
           zip.generateAsync({ type: "blob" }).then((content) => {
@@ -135,6 +131,16 @@
         jsonReader.readAsText(jsonFile);
       };
       spritesheetReader.readAsArrayBuffer(spritesheetFile);
+    }
+
+    // Helper function to load an image asynchronously
+    function loadImage(url) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = url;
+      });
     }
   </script>
 </body>

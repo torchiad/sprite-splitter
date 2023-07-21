@@ -2,17 +2,83 @@
 <html>
 <head>
   <title>Spritesheet Splitter</title>
+  <!-- Add the Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
+  <style>
+    /* Custom styles for the spritesheet splitter */
+    body {
+        font-family: "Poppins", Arial, sans-serif;
+    
+      padding: 20px;
+      background: linear-gradient(-45deg, #78c0e0, #f6b9b2);
+      background-size: 500% 500%;
+      animation: gradientAnimation 15s ease infinite;
+    }
+
+    @keyframes gradientAnimation {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+
+    .container {
+      max-width: 500px;
+      margin: auto;
+      padding: 20px;
+      border-radius: 0px;
+      background-color: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .btn-primary {
+      background-color: #2b3d66;
+      border-color: #2b3d66;
+      border-radius: 0px;
+    }
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+    }
+
+  </style>
 </head>
 <body>
-  <h1>Spritesheet Splitter</h1>
-  <form id="spritesheetForm">
-    <label for="spritesheetImage">Spritesheet Image:</label>
-    <input type="file" id="spritesheetImage" accept="image/png, image/jpeg" required><br>
-    <label for="spritesheetJson">Spritesheet JSON:</label>
-    <input type="file" id="spritesheetJson" accept=".json" required><br>
-    <button type="button" onclick="splitAndDownloadSprites()">Split and Download ZIP</button>
-  </form>
+    <h1 class="text-center mb-4">Spritesheet Splitter</h1>
+    <div class="container">
+        <form id="spritesheetForm" class="text-center">
+          <div class="form-group row">
+            <label for="spritesheetImage" class="col-sm-3 col-form-label font-weight-bold text-left">Spritesheet</label>
+            <div class="col-sm-9">
+              <input type="file" class="form-control rounded-0" id="spritesheetImage" accept="image/png, image/jpeg" required>
+            </div>
+          </div>
+          <hr />
+          <div class="form-group row">
+            <label for="spritesheetJson" class="col-sm-3 col-form-label font-weight-bold text-left">JSON</label>
+            <div class="col-sm-9">
+              <input type="file" class="form-control rounded-0" id="spritesheetJson" accept=".json" required>
+            </div>
+          </div>
+          <button type="button" class="btn btn-primary" onclick="splitAndDownloadSprites()">Generate and Download ZIP</button>
+        </form>
+      </div>
 
+  <!-- Add the Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
   <script>
     function splitAndDownloadSprites() {
@@ -61,13 +127,8 @@
             link.href = URL.createObjectURL(content);
             link.download = "spritesheet_sprites.zip";
             link.textContent = "Download ZIP";
-            link.style.display = "none"; // Hide the link
             document.body.appendChild(link);
-
-            // Trigger the click event to initiate the download
             link.click();
-
-            // Clean up and remove the link
             document.body.removeChild(link);
           });
         };

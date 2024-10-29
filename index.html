@@ -122,11 +122,10 @@
 
         FilePond.registerPlugin(FilePondPluginFileValidateType);
 
-        // Create FilePond instances
         const spritesheetPond = FilePond.create(document.getElementById('spritesheetImage'), {
             credits: false,
             labelIdle: "Drag & Drop your image",
-            acceptedFileTypes: ['image/png', 'image/jpeg'], // Accept only PNG and JPEG
+            acceptedFileTypes: ['image/png', 'image/jpeg'],
             onaddfile: (error, file) => {
                 if (error) {
                     alert('Invalid file type! Please upload a PNG or JPEG.');
@@ -139,7 +138,6 @@
             labelIdle: "Drag & Drop your JSON",
         });
 
-        // Event listeners for when files are added
         spritesheetPond.on('addfile', (error, file) => {
             if (!error) {
                 spritesheetFile = file.file;
@@ -229,10 +227,10 @@
 
                 const labelWidth = ctx.measureText(spriteName).width + 10;
                 ctx.fillStyle = "white";
-                ctx.fillRect(x, y + (rotated ? 0 : -20), labelWidth, 40); // Adjusted height for padding
+                ctx.fillRect(x, y + (rotated ? 0 : -20), labelWidth, 40);
                 ctx.fillStyle = "black";
-                ctx.font = "24px Poppins"; // Increased font size
-                ctx.fillText(spriteName, x + 5, y + (rotated ? 25 : 10)); // Adjusting the text position
+                ctx.font = "24px Poppins";
+                ctx.fillText(spriteName, x + 5, y + (rotated ? 25 : 10));
             });
         }
 

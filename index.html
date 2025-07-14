@@ -631,11 +631,7 @@
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" id="totalSprites">0</span>
-                    <span>Sprites</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number" id="totalSize">0</span>
-                    <span>MB Saved</span>
+                    <span>Total Sprites</span>
                 </div>
             </div>
         </div>
@@ -734,20 +730,17 @@
         // Statistics
         let stats = {
             totalProcessed: parseInt(localStorage.getItem('totalProcessed') || '0'),
-            totalSprites: parseInt(localStorage.getItem('totalSprites') || '0'),
-            totalSize: parseFloat(localStorage.getItem('totalSize') || '0')
+            totalSprites: parseInt(localStorage.getItem('totalSprites') || '0')
         };
 
         function updateStats() {
             document.getElementById('totalProcessed').textContent = stats.totalProcessed;
             document.getElementById('totalSprites').textContent = stats.totalSprites;
-            document.getElementById('totalSize').textContent = stats.totalSize.toFixed(1);
         }
 
         function saveStats() {
             localStorage.setItem('totalProcessed', stats.totalProcessed.toString());
             localStorage.setItem('totalSprites', stats.totalSprites.toString());
-            localStorage.setItem('totalSize', stats.totalSize.toString());
         }
 
         // Initialize particles
@@ -1091,7 +1084,6 @@
                 // Update stats
                 stats.totalProcessed++;
                 stats.totalSprites += sprites.length;
-                stats.totalSize += imageFile.size / (1024 * 1024);
                 updateStats();
                 saveStats();
 
@@ -1115,10 +1107,18 @@
             showProgress('Preparing to cut sprites...');
 
             try {
-                // Import JSZip dynamically
-                const JSZip = (await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')).default;
-                const zip = new JSZip();
+                // Use JSZip from CDN
+                updateProgress(5, 'Loading JSZip...');
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+                document.head.appendChild(script);
                 
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+                
+                const zip = new JSZip();
                 updateProgress(10, 'Creating sprite files...');
                 
                 const sprites = Object.keys(jsonData.frames);
@@ -1177,7 +1177,6 @@
                 // Update stats
                 stats.totalProcessed++;
                 stats.totalSprites += sprites.length;
-                stats.totalSize += imageFile.size / (1024 * 1024);
                 updateStats();
                 saveStats();
 

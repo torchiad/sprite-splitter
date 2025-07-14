@@ -5,291 +5,1280 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spritesheet Splitter</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap">
-    <link href="https://unpkg.com/filepond/dist/filepond.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* ===== RESET & VARIABLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --success-gradient: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+            --error-gradient: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);
+            --dark-bg: #0a0a0a;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.4);
+        }
+
+        /* ===== BASE STYLES ===== */
         body {
-            font-family: "Poppins", Arial, sans-serif;
-            padding: 20px;
-            background: linear-gradient(-45deg, #78c0e0, #f6b9b2);
-            background-size: 500% 500%;
-            animation: gradientAnimation 15s ease infinite;
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        @keyframes gradientAnimation {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.2) 0%, transparent 50%);
+            z-index: -1;
+            animation: backgroundShift 20s ease-in-out infinite;
         }
 
+        /* ===== ANIMATIONS ===== */
+        @keyframes backgroundShift {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+        }
+
+        @keyframes snip {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-15deg); }
+            75% { transform: rotate(15deg); }
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== PARTICLES ===== */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 15s linear infinite;
+        }
+
+        /* ===== LAYOUT ===== */
         .container {
-            max-width: 500px;
-            margin: auto;
-            padding: 20px;
-            border-radius: 0;
-            background-color: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .title-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             justify-content: center;
-            margin-bottom: 20px;
+            gap: 1.5rem;
         }
 
-        .title-text {
-            font-size: 24px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 8px;
-            color: #ffffff;
-            text-decoration: underline;
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* ===== HEADER ===== */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+            position: relative;
         }
 
         .scissors-icon {
-            font-size: 24px;
+            display: inline-block;
+            margin-left: 1rem;
+            font-size: clamp(1.5rem, 4vw, 2.5rem);
+            animation: snip 3s ease-in-out infinite;
+            transform-origin: center;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* ===== CARDS ===== */
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 2rem;
+            backdrop-filter: blur(20px);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
             position: relative;
-            bottom: 2px;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* ===== UPLOAD AREAS ===== */
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .upload-area.dragover {
+            border-color: #4facfe;
+            background: rgba(79, 172, 254, 0.1);
+            transform: scale(1.02);
+        }
+
+        .upload-area.has-file {
+            border-color: #56ab2f;
+            background: rgba(86, 171, 47, 0.1);
+        }
+
+        .upload-area.error {
+            border-color: #ff416c;
+            background: rgba(255, 65, 108, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.6;
+        }
+
+        .upload-text {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* ===== FILE STATUS ===== */
+        .file-status {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .file-status.show {
+            display: flex;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .file-preview {
+            max-width: 150px;
+            max-height: 100px;
+            border-radius: 0.5rem;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+        }
+
+        .json-info {
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            font-size: 0.9rem;
+            text-align: left;
+            width: 100%;
+        }
+
+        .json-info h4 {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .json-detail {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+
+        .json-detail:last-child {
+            margin-bottom: 0;
+        }
+
+        .error-message {
+            background: rgba(255, 65, 108, 0.1);
+            border: 1px solid rgba(255, 65, 108, 0.3);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            color: #ff6b6b;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        /* ===== SPRITE PREVIEW ===== */
+        .sprite-preview {
+            margin-top: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sprite-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .sprite-item {
+            position: relative;
+            aspect-ratio: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 0.25rem;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .sprite-item:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: var(--shadow);
+        }
+
+        .sprite-canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .sprite-name {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            font-size: 0.7rem;
+            padding: 0.2rem;
+            text-align: center;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        /* ===== BUTTONS ===== */
+        .buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .btn-primary {
-            background-color: #2b3d66;
-            border-color: #2b3d66;
+            background: var(--primary-gradient);
+            color: white;
         }
 
-        .btn-primary:hover,
-        .btn-primary:focus {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
+        .btn-secondary {
+            background: var(--secondary-gradient);
+            color: white;
         }
 
-        .spinner-border {
+        .btn-clear {
+            background: var(--error-gradient);
+            color: white;
+            flex: 0 0 auto;
+            min-width: 120px;
+        }
+
+        .btn:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn:not(:disabled):active {
+            transform: translateY(0);
+        }
+
+        .btn-loading {
+            pointer-events: none;
+        }
+
+        .btn-loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        .loading-spinner {
             display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
         }
 
-        .btn-generating .spinner-border {
+        .btn-loading .loading-spinner {
             display: inline-block;
         }
 
-        .btn-generating .btn-text {
+        /* ===== PROGRESS ===== */
+        .progress-container {
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
             display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .cancel-btn {
+            position: absolute;
+            top: -2.5rem;
+            right: 0;
+            background: rgba(255, 65, 108, 0.2);
+            border: 1px solid rgba(255, 65, 108, 0.3);
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        .processing .cancel-btn {
+            display: flex;
+        }
+
+        /* ===== TOOLTIPS ===== */
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+
+        /* ===== KEYBOARD SHORTCUTS ===== */
+        .keyboard-shortcuts {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .shortcut {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.2rem;
+            margin: 0 0.2rem;
+            font-family: monospace;
+        }
+
+        /* ===== UTILITY CLASSES ===== */
+        .success-animation {
+            animation: successPulse 0.6s ease-in-out;
+        }
+
+        .processing {
+            pointer-events: none;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+            
+            .upload-area {
+                padding: 1.5rem;
+                min-height: 150px;
+            }
+
+            .stats-bar {
+                gap: 1rem;
+            }
+
+            .sprite-grid {
+                grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="title-wrapper">
-        <div class="title-text">Spritesheet Splitter</div>
-        <div class="scissors-icon">&#9986;</div>
-    </div>
+    <div class="particles"></div>
+    
     <div class="container">
-        <form id="spritesheetForm" class="text-center">
-            <input type="file" id="spritesheetImage" accept="image/png,image/jpeg" class="filepond" required>
-            <input type="file" id="spritesheetJson" accept="json,application/json,application/JSON" class="filepond"
-                required>
-            <button type="button" class="btn btn-primary rounded-0" id="labelButton"
-                onclick="downloadLabeledSpritesheet()" disabled>
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                <span class="btn-text">Download Labeled Spritesheet</span>
-            </button>
-            <button type="button" class="btn btn-primary rounded-0" id="cutButton" onclick="cutSpritesheet()" disabled>
-                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                <span class="btn-text">Cut Spritesheet</span>
-            </button>
-        </form>
+        <div class="header">
+            <h1 class="title">
+                Spritesheet Splitter
+                <svg class="scissors-icon" viewBox="0 0 24 24" width="40" height="40">
+                    <path fill="currentColor" d="M9.64 7.64a.75.75 0 0 1 1.06 1.06L8.41 11l2.29 2.29a.75.75 0 1 1-1.06 1.06L7.34 12l-2.3 2.3a.75.75 0 0 1-1.06-1.06L6.27 11 3.98 8.7a.75.75 0 0 1 1.06-1.06L7.34 10l2.3-2.36Zm8.72 0a.75.75 0 0 0-1.06 1.06L19.59 11l-2.29 2.29a.75.75 0 1 0 1.06 1.06L20.66 12l2.3 2.3a.75.75 0 0 0 1.06-1.06L21.73 11l2.29-2.3a.75.75 0 0 0-1.06-1.06L20.66 10l-2.3-2.36Z"/>
+                </svg>
+            </h1>
+            <p class="subtitle">Split your spritesheets with style ✨</p>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-number" id="totalProcessed">0</span>
+                    <span>Processed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalSprites">0</span>
+                    <span>Sprites</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="totalSize">0</span>
+                    <span>MB Saved</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-grid">
+                <div class="upload-area" id="imageUpload">
+                    <div class="upload-icon">🖼️</div>
+                    <div class="upload-text">Drop your spritesheet image</div>
+                    <div class="upload-hint tooltip" data-tooltip="Supports PNG, JPG, JPEG • Max 50MB">PNG, JPG, or JPEG • Max 50MB</div>
+                    <input type="file" class="file-input" id="imageInput" accept="image/png,image/jpeg,image/jpg">
+                    <div class="file-status" id="imageStatus">
+                        <img class="file-preview" id="imagePreview" alt="Image preview">
+                        <div class="file-info">
+                            <span>✅</span>
+                            <span id="imageFileName"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="upload-area" id="jsonUpload">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Drop your JSON data</div>
+                    <div class="upload-hint tooltip" data-tooltip="TexturePacker or similar format with frames object">JSON format with sprite coordinates</div>
+                    <input type="file" class="file-input" id="jsonInput" accept=".json,application/json">
+                    <div class="file-status" id="jsonStatus">
+                        <div class="json-info" id="jsonInfo">
+                            <h4>JSON Analysis</h4>
+                            <div class="json-detail">
+                                <span>Sprites:</span>
+                                <span id="spriteCount">0</span>
+                            </div>
+                            <div class="json-detail">
+                                <span>Dimensions:</span>
+                                <span id="spriteDimensions">0x0</span>
+                            </div>
+                            <div class="json-detail">
+                                <span>Format:</span>
+                                <span id="spriteFormat">Unknown</span>
+                            </div>
+                        </div>
+                        <div class="file-info">
+                            <span>✅</span>
+                            <span id="jsonFileName"></span>
+                        </div>
+                    </div>
+                    <div class="error-message" id="jsonError" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="previewCard" style="display: none;">
+            <h3>Sprite Preview</h3>
+            <div class="sprite-preview">
+                <div class="sprite-grid" id="spriteGrid"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="buttons">
+                <button class="btn btn-primary" id="labelBtn" disabled>
+                    <div class="loading-spinner"></div>
+                    <span>Label Sprites</span>
+                </button>
+                <button class="btn btn-secondary" id="cutBtn" disabled>
+                    <div class="loading-spinner"></div>
+                    <span>Cut Sprites</span>
+                </button>
+                <button class="btn btn-clear" id="clearBtn">
+                    <span>Clear All</span>
+                </button>
+            </div>
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText"></div>
+                <div class="cancel-btn" id="cancelBtn" title="Cancel Operation">✕</div>
+            </div>
+        </div>
+
+        <div class="keyboard-shortcuts">
+            <span class="shortcut">Enter</span> Process • 
+            <span class="shortcut">Escape</span> Clear
+        </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.6.0/jszip.min.js"></script>
-    <script src="https://unpkg.com/filepond/dist/filepond.js"></script>
-    <script
-        src="https://unpkg.com/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js"></script>
     <script>
-        let spritesheetImg;
-        let data;
-        let spritesheetFile;
-        let jsonFile;
+        // Global variables
+        let spritesheetImg = null;
+        let jsonData = null;
+        let imageFile = null;
+        let jsonFile = null;
+        let currentOperation = null;
 
-        FilePond.registerPlugin(FilePondPluginFileValidateType);
+        // Statistics
+        let stats = {
+            totalProcessed: parseInt(localStorage.getItem('totalProcessed') || '0'),
+            totalSprites: parseInt(localStorage.getItem('totalSprites') || '0'),
+            totalSize: parseFloat(localStorage.getItem('totalSize') || '0')
+        };
 
-        const spritesheetPond = FilePond.create(document.getElementById('spritesheetImage'), {
-            credits: false,
-            labelIdle: "Drag & Drop your image",
-            acceptedFileTypes: ['image/png', 'image/jpeg'],
-            onaddfile: (error, file) => {
-                if (error) {
-                    alert('Invalid file type! Please upload a PNG or JPEG.');
+        function updateStats() {
+            document.getElementById('totalProcessed').textContent = stats.totalProcessed;
+            document.getElementById('totalSprites').textContent = stats.totalSprites;
+            document.getElementById('totalSize').textContent = stats.totalSize.toFixed(1);
+        }
+
+        function saveStats() {
+            localStorage.setItem('totalProcessed', stats.totalProcessed.toString());
+            localStorage.setItem('totalSprites', stats.totalSprites.toString());
+            localStorage.setItem('totalSize', stats.totalSize.toString());
+        }
+
+        // Initialize particles
+        function createParticles() {
+            const particles = document.querySelector('.particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particles.appendChild(particle);
+            }
+        }
+
+        // File size formatter
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // File upload handling
+        function setupFileUpload(uploadArea, fileInput, statusDiv, onFileLoad) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
+            });
+
+            uploadArea.addEventListener('drop', handleDrop, false);
+            fileInput.addEventListener('change', handleFileSelect, false);
+
+            function handleDrop(e) {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFile(files[0]);
                 }
             }
-        });
 
-        const jsonPond = FilePond.create(document.getElementById('spritesheetJson'), {
-            credits: false,
-            labelIdle: "Drag & Drop your JSON",
-        });
-
-        spritesheetPond.on('addfile', (error, file) => {
-            if (!error) {
-                spritesheetFile = file.file;
-                enableButtons();
+            function handleFileSelect(e) {
+                if (e.target.files.length > 0) {
+                    handleFile(e.target.files[0]);
+                }
             }
-        });
 
-        jsonPond.on('addfile', (error, file) => {
-            if (!error) {
-                jsonFile = file.file;
-                enableButtons();
+            function handleFile(file) {
+                // Check file size (50MB limit)
+                if (file.size > 50 * 1024 * 1024) {
+                    showError(uploadArea, 'File too large! Maximum size is 50MB.');
+                    return;
+                }
+
+                uploadArea.classList.remove('error');
+                uploadArea.classList.add('has-file', 'success-animation');
+                statusDiv.classList.add('show');
+                
+                setTimeout(() => {
+                    uploadArea.classList.remove('success-animation');
+                }, 600);
+
+                onFileLoad(file);
             }
-        });
-
-        function enableButtons() {
-            const isEnabled = spritesheetFile && jsonFile;
-
-            document.getElementById("labelButton").disabled = !isEnabled;
-            document.getElementById("cutButton").disabled = !isEnabled;
         }
 
-        function readFiles() {
-            return Promise.all([
-                readFileAsArrayBuffer(spritesheetFile).then(createImage),
-                readFileAsText(jsonFile)
-            ]).then(([image, jsonData]) => {
-                spritesheetImg = image;
-                data = JSON.parse(jsonData);
-            });
+        // Show error message
+        function showError(uploadArea, message) {
+            uploadArea.classList.add('error');
+            // You could add error display logic here
         }
 
-        function readFileAsArrayBuffer(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsArrayBuffer(file);
-            });
-        }
-
-        function readFileAsText(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsText(file);
-            });
-        }
-
-        function createImage(arrayBuffer) {
-            return new Promise((resolve) => {
-                const url = URL.createObjectURL(new Blob([arrayBuffer]));
+        // Image file handler
+        function handleImageFile(file) {
+            imageFile = file;
+            document.getElementById('imageFileName').textContent = `${file.name} (${formatFileSize(file.size)})`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 const img = new Image();
-                img.onload = () => resolve(img);
-                img.src = url;
-            });
+                img.onload = function() {
+                    spritesheetImg = img;
+                    document.getElementById('imagePreview').src = e.target.result;
+                    checkFilesLoaded();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
-        function downloadLabeledSpritesheet() {
-            readFiles().then(() => {
-                const canvas = createCanvas(data.meta.size.w, data.meta.size.h);
-                const ctx = canvas.getContext("2d");
+        // JSON file handler
+        function handleJsonFile(file) {
+            jsonFile = file;
+            document.getElementById('jsonFileName').textContent = `${file.name} (${formatFileSize(file.size)})`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    jsonData = JSON.parse(e.target.result);
+                    validateAndDisplayJson();
+                    checkFilesLoaded();
+                } catch (error) {
+                    showJsonError('Invalid JSON file format: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
 
+        // Validate and display JSON info
+        function validateAndDisplayJson() {
+            const errorDiv = document.getElementById('jsonError');
+            errorDiv.style.display = 'none';
+
+            if (!jsonData.frames) {
+                showJsonError('JSON must contain a "frames" object');
+                return;
+            }
+
+            const sprites = Object.keys(jsonData.frames);
+            const spriteCount = sprites.length;
+            
+            let dimensions = 'Unknown';
+            let format = 'Custom';
+            
+            if (jsonData.meta) {
+                if (jsonData.meta.size) {
+                    dimensions = `${jsonData.meta.size.w}x${jsonData.meta.size.h}`;
+                }
+                if (jsonData.meta.app) {
+                    format = jsonData.meta.app;
+                }
+            }
+
+            // Update JSON info display
+            document.getElementById('spriteCount').textContent = spriteCount;
+            document.getElementById('spriteDimensions').textContent = dimensions;
+            document.getElementById('spriteFormat').textContent = format;
+
+            // Generate sprite preview
+            generateSpritePreview();
+        }
+
+        // Show JSON error
+        function showJsonError(message) {
+            const errorDiv = document.getElementById('jsonError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('jsonUpload').classList.add('error');
+            document.getElementById('jsonStatus').classList.remove('show');
+        }
+
+        // Generate sprite preview
+        function generateSpritePreview() {
+            if (!spritesheetImg || !jsonData) return;
+
+            const previewCard = document.getElementById('previewCard');
+            const spriteGrid = document.getElementById('spriteGrid');
+            
+            spriteGrid.innerHTML = '';
+            
+            const sprites = Object.keys(jsonData.frames);
+            const maxPreview = 20; // Limit preview to first 20 sprites
+            
+            sprites.slice(0, maxPreview).forEach(spriteName => {
+                const frame = jsonData.frames[spriteName].frame;
+                const rotated = jsonData.frames[spriteName].rotated || false;
+                
+                // Create canvas for sprite
+                const canvas = document.createElement('canvas');
+                const size = 80;
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                
+                // Calculate scaling to fit in preview
+                const spriteWidth = rotated ? frame.h : frame.w;
+                const spriteHeight = rotated ? frame.w : frame.h;
+                const scale = Math.min(size / spriteWidth, size / spriteHeight);
+                
+                const drawWidth = spriteWidth * scale;
+                const drawHeight = spriteHeight * scale;
+                const drawX = (size - drawWidth) / 2;
+                const drawY = (size - drawHeight) / 2;
+                
+                // Draw sprite
+                ctx.drawImage(
+                    spritesheetImg,
+                    frame.x, frame.y, frame.w, frame.h,
+                    drawX, drawY, drawWidth, drawHeight
+                );
+                
+                // Create sprite item
+                const spriteItem = document.createElement('div');
+                spriteItem.className = 'sprite-item';
+                spriteItem.title = spriteName;
+                
+                canvas.className = 'sprite-canvas';
+                spriteItem.appendChild(canvas);
+                
+                const spriteNameElement = document.createElement('div');
+                spriteNameElement.className = 'sprite-name';
+                spriteNameElement.textContent = spriteName;
+                spriteItem.appendChild(spriteNameElement);
+                
+                spriteGrid.appendChild(spriteItem);
+            });
+            
+            if (sprites.length > maxPreview) {
+                const moreItem = document.createElement('div');
+                moreItem.className = 'sprite-item';
+                moreItem.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">+${sprites.length - maxPreview} more</div>`;
+                spriteGrid.appendChild(moreItem);
+            }
+            
+            previewCard.style.display = 'block';
+        }
+
+        // Check if both files are loaded
+        function checkFilesLoaded() {
+            if (spritesheetImg && jsonData) {
+                document.getElementById('labelBtn').disabled = false;
+                document.getElementById('cutBtn').disabled = false;
+                generateSpritePreview();
+            }
+        }
+
+        // Progress bar utilities
+        function showProgress(text = '') {
+            const container = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            container.classList.add('processing');
+            progressBar.classList.add('show');
+            progressText.textContent = text;
+        }
+
+        function updateProgress(percent, text = '') {
+            document.getElementById('progressFill').style.width = percent + '%';
+            if (text) {
+                document.getElementById('progressText').textContent = text;
+            }
+        }
+
+        function hideProgress() {
+            const container = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            container.classList.remove('processing');
+            progressBar.classList.remove('show');
+            document.getElementById('progressFill').style.width = '0%';
+            progressText.textContent = '';
+        }
+
+        // Button loading state
+        function setButtonLoading(button, loading) {
+            if (loading) {
+                button.classList.add('btn-loading');
+                button.disabled = true;
+            } else {
+                button.classList.remove('btn-loading');
+                button.disabled = !(spritesheetImg && jsonData);
+            }
+        }
+
+        // Color generator for sprite borders
+        function getColorForSprite(index, total) {
+            const hue = (index / total) * 360;
+            return `hsl(${hue}, 70%, 60%)`;
+        }
+
+        // Download labeled spritesheet
+        async function downloadLabeledSpritesheet() {
+            const labelBtn = document.getElementById('labelBtn');
+            setButtonLoading(labelBtn, true);
+            showProgress('Creating labeled spritesheet...');
+
+            try {
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = jsonData.meta.size.w;
+                canvas.height = jsonData.meta.size.h;
+                const ctx = canvas.getContext('2d');
+
+                // Draw original image
                 ctx.drawImage(spritesheetImg, 0, 0);
-                labelSprites(ctx);
+                updateProgress(25, 'Drawing base image...');
 
-                const finalImageUrl = canvas.toDataURL("image/png");
-                downloadImage(finalImageUrl, "spritesheet_with_labels.png");
-            });
+                // Label sprites
+                const sprites = Object.keys(jsonData.frames);
+                let processed = 0;
+
+                for (const spriteName of sprites) {
+                    const frame = jsonData.frames[spriteName].frame;
+                    const rotated = jsonData.frames[spriteName].rotated || false;
+                    
+                    // Get color for this sprite
+                    const color = getColorForSprite(processed, sprites.length);
+                    
+                    // Draw border
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(frame.x, frame.y, 
+                        rotated ? frame.h : frame.w, 
+                        rotated ? frame.w : frame.h);
+
+                    // Draw label background
+                    ctx.font = 'bold 14px Inter';
+                    const textWidth = ctx.measureText(spriteName).width;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                    ctx.fillRect(frame.x, frame.y - 20, textWidth + 10, 20);
+
+                    // Draw label text
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(spriteName, frame.x + 5, frame.y - 6);
+
+                    processed++;
+                    updateProgress(25 + (processed / sprites.length) * 65, `Labeling sprite ${processed}/${sprites.length}...`);
+                }
+
+                // Download
+                updateProgress(95, 'Preparing download...');
+                const link = document.createElement('a');
+                link.download = 'labeled_spritesheet.png';
+                link.href = canvas.toDataURL();
+                link.click();
+
+                // Update stats
+                stats.totalProcessed++;
+                stats.totalSprites += sprites.length;
+                stats.totalSize += imageFile.size / (1024 * 1024);
+                updateStats();
+                saveStats();
+
+                updateProgress(100, 'Complete!');
+                setTimeout(() => {
+                    hideProgress();
+                    setButtonLoading(labelBtn, false);
+                }, 1000);
+
+            } catch (error) {
+                alert('Error creating labeled spritesheet: ' + error.message);
+                hideProgress();
+                setButtonLoading(labelBtn, false);
+            }
         }
 
-        function createCanvas(width, height) {
-            const canvas = document.createElement("canvas");
-            canvas.width = width;
-            canvas.height = height;
-            return canvas;
-        }
+        // Cut spritesheet
+        async function cutSpritesheet() {
+            const cutBtn = document.getElementById('cutBtn');
+            setButtonLoading(cutBtn, true);
+            showProgress('Preparing to cut sprites...');
 
-        function labelSprites(ctx) {
-            Object.keys(data.frames).forEach((spriteName) => {
-                const { x, y, w: originalWidth, h: originalHeight } = data.frames[spriteName].frame;
-
-                const rotated = data.frames[spriteName].rotated;
-                ctx.strokeStyle = "red";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x, y, rotated ? originalHeight : originalWidth, rotated ? originalWidth : originalHeight);
-
-                const labelWidth = ctx.measureText(spriteName).width + 10;
-                ctx.fillStyle = "white";
-                ctx.fillRect(x, y + (rotated ? 0 : -20), labelWidth, 40);
-                ctx.fillStyle = "black";
-                ctx.font = "24px Poppins";
-                ctx.fillText(spriteName, x + 5, y + (rotated ? 25 : 10));
-            });
-        }
-
-        function downloadImage(dataUrl, filename) {
-            const link = document.createElement("a");
-            link.href = dataUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        function cutSpritesheet() {
-            readFiles().then(() => {
+            try {
+                // Import JSZip dynamically
+                const JSZip = (await import('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js')).default;
                 const zip = new JSZip();
-                const promises = [];
+                
+                updateProgress(10, 'Creating sprite files...');
+                
+                const sprites = Object.keys(jsonData.frames);
+                let processed = 0;
 
-                Object.keys(data.frames).forEach((spriteName) => {
-                    const spriteInfo = data.frames[spriteName];
-                    const { x, y, w: originalWidth, h: originalHeight } = spriteInfo.frame;
-                    const rotated = spriteInfo.rotated;
+                for (const spriteName of sprites) {
+                    const frame = jsonData.frames[spriteName].frame;
+                    const rotated = jsonData.frames[spriteName].rotated || false;
+                    
+                    // Create canvas for individual sprite
+                    const canvas = document.createElement('canvas');
+                    canvas.width = rotated ? frame.h : frame.w;
+                    canvas.height = rotated ? frame.w : frame.h;
+                    const ctx = canvas.getContext('2d');
 
-                    const spriteCanvas = createCanvas(rotated ? originalHeight : originalWidth, rotated ? originalWidth : originalHeight);
-                    const spriteCtx = spriteCanvas.getContext("2d");
-
+                    // Draw sprite
                     if (rotated) {
-                        spriteCtx.drawImage(spritesheetImg, x, y, originalHeight, originalWidth, 0, 0, spriteCanvas.width, spriteCanvas.height);
+                        // Handle rotated sprites
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.rotate(Math.PI / 2);
+                        ctx.drawImage(spritesheetImg, 
+                            frame.x, frame.y, frame.w, frame.h,
+                            -frame.h / 2, -frame.w / 2, frame.h, frame.w);
                     } else {
-                        spriteCtx.drawImage(spritesheetImg, x, y, originalWidth, originalHeight, 0, 0, spriteCanvas.width, spriteCanvas.height);
+                        ctx.drawImage(spritesheetImg, 
+                            frame.x, frame.y, frame.w, frame.h,
+                            0, 0, canvas.width, canvas.height);
                     }
 
-                    promises.push(createBlob(zip, spriteCanvas, spriteName));
-                });
-
-                Promise.all(promises).then(() => {
-                    zip.generateAsync({ type: "blob" }).then((content) => {
-                        downloadZip(content, "sprites.zip");
+                    // Convert to blob and add to zip
+                    const blob = await new Promise(resolve => {
+                        canvas.toBlob(resolve, 'image/png');
                     });
-                });
-            });
-        }
-
-        function createBlob(zip, canvas, spriteName) {
-            return new Promise((resolve) => {
-                canvas.toBlob((blob) => {
+                    
                     zip.file(`${spriteName}.png`, blob);
-                    resolve();
-                }, "image/png");
-            });
+                    
+                    processed++;
+                    updateProgress(10 + (processed / sprites.length) * 70, `Processing sprite ${processed}/${sprites.length}...`);
+                }
+
+                // Generate zip
+                updateProgress(85, 'Creating zip file...');
+                const zipBlob = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 6 }
+                });
+                
+                // Download
+                updateProgress(95, 'Preparing download...');
+                const link = document.createElement('a');
+                link.download = 'sprites.zip';
+                link.href = URL.createObjectURL(zipBlob);
+                link.click();
+
+                // Update stats
+                stats.totalProcessed++;
+                stats.totalSprites += sprites.length;
+                stats.totalSize += imageFile.size / (1024 * 1024);
+                updateStats();
+                saveStats();
+
+                updateProgress(100, 'Complete!');
+                setTimeout(() => {
+                    hideProgress();
+                    setButtonLoading(cutBtn, false);
+                }, 1000);
+
+            } catch (error) {
+                alert('Error cutting spritesheet: ' + error.message);
+                hideProgress();
+                setButtonLoading(cutBtn, false);
+            }
         }
 
-        function downloadZip(content, filename) {
-            const zipLink = document.createElement("a");
-            zipLink.href = URL.createObjectURL(content);
-            zipLink.download = filename;
-            document.body.appendChild(zipLink);
-            zipLink.click();
-            document.body.removeChild(zipLink);
+        // Clear all files
+        function clearAll() {
+            // Reset variables
+            spritesheetImg = null;
+            jsonData = null;
+            imageFile = null;
+            jsonFile = null;
+
+            // Reset UI
+            document.getElementById('imageInput').value = '';
+            document.getElementById('jsonInput').value = '';
+            document.getElementById('imageStatus').classList.remove('show');
+            document.getElementById('jsonStatus').classList.remove('show');
+            document.getElementById('jsonError').style.display = 'none';
+            document.getElementById('previewCard').style.display = 'none';
+            
+            // Reset upload areas
+            document.getElementById('imageUpload').classList.remove('has-file', 'error');
+            document.getElementById('jsonUpload').classList.remove('has-file', 'error');
+            
+            // Disable buttons
+            document.getElementById('labelBtn').disabled = true;
+            document.getElementById('cutBtn').disabled = true;
+            
+            hideProgress();
         }
+
+        // Cancel current operation
+        function cancelOperation() {
+            if (currentOperation) {
+                currentOperation.cancelled = true;
+            }
+            hideProgress();
+            
+            // Re-enable buttons
+            document.getElementById('labelBtn').disabled = !(spritesheetImg && jsonData);
+            document.getElementById('cutBtn').disabled = !(spritesheetImg && jsonData);
+            setButtonLoading(document.getElementById('labelBtn'), false);
+            setButtonLoading(document.getElementById('cutBtn'), false);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT') return;
+            
+            switch(e.key) {
+                case 'Enter':
+                    e.preventDefault();
+                    if (!document.getElementById('cutBtn').disabled) {
+                        cutSpritesheet();
+                    }
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    clearAll();
+                    break;
+            }
+        });
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            updateStats();
+            
+            // Setup file uploads
+            setupFileUpload(
+                document.getElementById('imageUpload'),
+                document.getElementById('imageInput'),
+                document.getElementById('imageStatus'),
+                handleImageFile
+            );
+
+            setupFileUpload(
+                document.getElementById('jsonUpload'),
+                document.getElementById('jsonInput'),
+                document.getElementById('jsonStatus'),
+                handleJsonFile
+            );
+
+            // Setup button handlers
+            document.getElementById('labelBtn').addEventListener('click', downloadLabeledSpritesheet);
+            document.getElementById('cutBtn').addEventListener('click', cutSpritesheet);
+            document.getElementById('clearBtn').addEventListener('click', clearAll);
+            document.getElementById('cancelBtn').addEventListener('click', cancelOperation);
+        });
     </script>
 </body>
 

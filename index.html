@@ -1032,14 +1032,14 @@
             showProgress('Creating labeled spritesheet...');
 
             try {
-                // Create canvas
+                // Create canvas with original spritesheet dimensions
                 const canvas = document.createElement('canvas');
                 canvas.width = jsonData.meta.size.w;
                 canvas.height = jsonData.meta.size.h;
                 const ctx = canvas.getContext('2d');
 
-                // Draw original image
-                ctx.drawImage(spritesheetImg, 0, 0);
+                // Draw original image at full size
+                ctx.drawImage(spritesheetImg, 0, 0, canvas.width, canvas.height);
                 updateProgress(25, 'Drawing base image...');
 
                 // Label sprites
@@ -1053,22 +1053,26 @@
                     // Get color for this sprite
                     const color = getColorForSprite(processed, sprites.length);
                     
-                    // Draw border
+                    // Draw border with proper dimensions
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = 2;
+                    ctx.lineWidth = Math.max(2, Math.min(frame.w, frame.h) / 50); // Scale border based on sprite size
                     ctx.strokeRect(frame.x, frame.y, 
                         rotated ? frame.h : frame.w, 
                         rotated ? frame.w : frame.h);
 
-                    // Draw label background
-                    ctx.font = 'bold 14px Inter';
+                    // Calculate font size based on sprite size
+                    const fontSize = Math.max(12, Math.min(frame.w, frame.h) / 8);
+                    ctx.font = `bold ${fontSize}px Inter`;
                     const textWidth = ctx.measureText(spriteName).width;
+                    const textHeight = fontSize + 4;
+                    
+                    // Draw label background
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                    ctx.fillRect(frame.x, frame.y - 20, textWidth + 10, 20);
+                    ctx.fillRect(frame.x, frame.y - textHeight, textWidth + 10, textHeight);
 
                     // Draw label text
                     ctx.fillStyle = '#ffffff';
-                    ctx.fillText(spriteName, frame.x + 5, frame.y - 6);
+                    ctx.fillText(spriteName, frame.x + 5, frame.y - 4);
 
                     processed++;
                     updateProgress(25 + (processed / sprites.length) * 65, `Labeling sprite ${processed}/${sprites.length}...`);
@@ -1128,13 +1132,13 @@
                     const frame = jsonData.frames[spriteName].frame;
                     const rotated = jsonData.frames[spriteName].rotated || false;
                     
-                    // Create canvas for individual sprite
+                    // Create canvas for individual sprite with original dimensions
                     const canvas = document.createElement('canvas');
                     canvas.width = rotated ? frame.h : frame.w;
                     canvas.height = rotated ? frame.w : frame.h;
                     const ctx = canvas.getContext('2d');
 
-                    // Draw sprite
+                    // Draw sprite at full original size
                     if (rotated) {
                         // Handle rotated sprites
                         ctx.translate(canvas.width / 2, canvas.height / 2);
@@ -1145,7 +1149,7 @@
                     } else {
                         ctx.drawImage(spritesheetImg, 
                             frame.x, frame.y, frame.w, frame.h,
-                            0, 0, canvas.width, canvas.height);
+                            0, 0, frame.w, frame.h);
                     }
 
                     // Convert to blob and add to zip

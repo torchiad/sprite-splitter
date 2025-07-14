@@ -569,6 +569,17 @@
             font-family: monospace;
         }
 
+        /* ===== VERSION INFO ===== */
+        .version {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            opacity: 0.7;
+            font-family: monospace;
+        }
+
         /* ===== UTILITY CLASSES ===== */
         .success-animation {
             animation: successPulse 0.6s ease-in-out;
@@ -716,6 +727,10 @@
         <div class="keyboard-shortcuts">
             <span class="shortcut">Enter</span> Process • 
             <span class="shortcut">Escape</span> Clear
+        </div>
+
+        <div class="version">
+            v2.1.0 • Updated July 2025
         </div>
     </div>
 
@@ -1053,26 +1068,42 @@
                     // Get color for this sprite
                     const color = getColorForSprite(processed, sprites.length);
                     
+                    const spriteWidth = rotated ? frame.h : frame.w;
+                    const spriteHeight = rotated ? frame.w : frame.h;
+                    
                     // Draw border with proper dimensions
                     ctx.strokeStyle = color;
-                    ctx.lineWidth = Math.max(2, Math.min(frame.w, frame.h) / 50); // Scale border based on sprite size
-                    ctx.strokeRect(frame.x, frame.y, 
-                        rotated ? frame.h : frame.w, 
-                        rotated ? frame.w : frame.h);
+                    ctx.lineWidth = Math.max(2, Math.min(spriteWidth, spriteHeight) / 50);
+                    ctx.strokeRect(frame.x, frame.y, spriteWidth, spriteHeight);
 
-                    // Calculate font size based on sprite size
-                    const fontSize = Math.max(12, Math.min(frame.w, frame.h) / 8);
+                    // Calculate font size based on sprite size (smaller to fit inside)
+                    const fontSize = Math.max(10, Math.min(spriteWidth, spriteHeight) / 12);
                     ctx.font = `bold ${fontSize}px Inter`;
                     const textWidth = ctx.measureText(spriteName).width;
-                    const textHeight = fontSize + 4;
+                    const textHeight = fontSize;
                     
-                    // Draw label background
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-                    ctx.fillRect(frame.x, frame.y - textHeight, textWidth + 10, textHeight);
+                    // Only draw label if sprite is big enough to accommodate it
+                    if (spriteWidth > textWidth + 10 && spriteHeight > textHeight + 8) {
+                        // Draw label background inside the sprite (top-left corner)
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                        ctx.fillRect(frame.x + 2, frame.y + 2, textWidth + 8, textHeight + 6);
 
-                    // Draw label text
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillText(spriteName, frame.x + 5, frame.y - 4);
+                        // Draw label text inside the background
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillText(spriteName, frame.x + 6, frame.y + textHeight + 4);
+                    } else if (spriteWidth > 30 && spriteHeight > 15) {
+                        // For medium sprites, just draw a shorter version of the name
+                        const shortName = spriteName.length > 8 ? spriteName.substring(0, 8) + '...' : spriteName;
+                        const shortTextWidth = ctx.measureText(shortName).width;
+                        
+                        if (spriteWidth > shortTextWidth + 8) {
+                            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                            ctx.fillRect(frame.x + 2, frame.y + 2, shortTextWidth + 6, textHeight + 4);
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillText(shortName, frame.x + 5, frame.y + textHeight + 2);
+                        }
+                    }
+                    // For very small sprites, skip the label entirely
 
                     processed++;
                     updateProgress(25 + (processed / sprites.length) * 65, `Labeling sprite ${processed}/${sprites.length}...`);

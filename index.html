@@ -790,7 +790,7 @@
 				<span class="shortcut">Escape</span> Clear
 			</div>
 
-			<div class="version">v2.1.0 • Updated July 2025</div>
+			<div class="version">v2.2.0 • Updated July 2025</div>
 		</div>
 
 		<script>
@@ -994,11 +994,10 @@
 				spriteGrid.innerHTML = '';
 
 				const sprites = Object.keys(jsonData.frames);
-				const maxPreview = 20; // Limit preview to first 20 sprites
 				let smallSpriteNumber = 1; // numbering for small sprites
-				let spriteNumLookup = {}; // index: number if small, or undefined
+				window.spriteNumLookup = {}; // Store globally for access in labeling
 
-				sprites.slice(0, maxPreview).forEach((spriteName, i) => {
+				sprites.forEach((spriteName, i) => {
 					const frame = jsonData.frames[spriteName].frame;
 					const rotated = jsonData.frames[spriteName].rotated || false;
 
@@ -1051,7 +1050,7 @@
 					if (spriteWidth * scale < nameWidth + 10 || spriteHeight * scale < 16) {
 						showLegendNumber = true;
 						legendNum = smallSpriteNumber++;
-						spriteNumLookup[spriteName] = legendNum;
+						window.spriteNumLookup[spriteName] = legendNum;
 						labelToShow = legendNum.toString();
 						// Add to legend list for display
 						legendItems.push({ num: legendNum, name: spriteName });
@@ -1065,13 +1064,6 @@
 
 					spriteGrid.appendChild(spriteItem);
 				});
-
-				if (sprites.length > maxPreview) {
-					const moreItem = document.createElement('div');
-					moreItem.className = 'sprite-item';
-					moreItem.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-secondary);">+${sprites.length - maxPreview} more</div>`;
-					spriteGrid.appendChild(moreItem);
-				}
 
 				// Show/hide legend area as needed
 				if (legendItems.length > 0) {
@@ -1140,26 +1132,48 @@
 				const hue = (index / total) * 360;
 				return `hsl(${hue}, 70%, 60%)`;
 			}
-
-			// Download labeled spritesheet
 			async function downloadLabeledSpritesheet() {
 				const labelBtn = document.getElementById('labelBtn');
 				setButtonLoading(labelBtn, true);
 				showProgress('Creating labeled spritesheet...');
 
 				try {
-					// Create canvas with original spritesheet dimensions
+					// Create canvas with original spritesheet dimensions + room for legend if needed
+					const sprites = Object.keys(jsonData.frames);
+
+					// Gather which ones have a legend number
+					let legendItems = [];
+					let smallSpriteNumber = 1;
+					let localNumLookup = {};
+					sprites.forEach((spriteName) => {
+						const frame = jsonData.frames[spriteName].frame;
+						const rotated = jsonData.frames[spriteName].rotated || false;
+						const spriteWidth = rotated ? frame.h : frame.w;
+						const spriteHeight = rotated ? frame.w : frame.h;
+						const fontSize = Math.max(10, Math.min(spriteWidth, spriteHeight) / 12);
+						// Use a temp canvas context for text width measuring
+						let tempCanvas = document.createElement('canvas');
+						let ctx2 = tempCanvas.getContext('2d');
+						ctx2.font = `bold ${fontSize}px Inter`;
+						const textWidth = ctx2.measureText(spriteName).width;
+						const textHeight = fontSize;
+						if (spriteWidth < textWidth + 10 || spriteHeight < textHeight + 8) {
+							localNumLookup[spriteName] = smallSpriteNumber++;
+							legendItems.push({ num: localNumLookup[spriteName], name: spriteName });
+						}
+					});
+
+					// Make canvas taller if legend is needed
+					const legendHeight = legendItems.length > 0 ? 32 + 18 * legendItems.length : 0;
 					const canvas = document.createElement('canvas');
 					canvas.width = jsonData.meta.size.w;
-					canvas.height = jsonData.meta.size.h;
+					canvas.height = jsonData.meta.size.h + legendHeight;
 					const ctx = canvas.getContext('2d');
 
 					// Draw original image at full size
-					ctx.drawImage(spritesheetImg, 0, 0, canvas.width, canvas.height);
+					ctx.drawImage(spritesheetImg, 0, 0, canvas.width, jsonData.meta.size.h);
 					updateProgress(25, 'Drawing base image...');
 
-					// Label sprites
-					const sprites = Object.keys(jsonData.frames);
 					let processed = 0;
 
 					for (const spriteName of sprites) {
@@ -1185,33 +1199,47 @@
 
 						// Only draw label if sprite is big enough to accommodate it
 						if (spriteWidth > textWidth + 10 && spriteHeight > textHeight + 8) {
-							// Draw label background inside the sprite (top-left corner)
 							ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
 							ctx.fillRect(frame.x + 2, frame.y + 2, textWidth + 8, textHeight + 6);
 
-							// Draw label text inside the background
 							ctx.fillStyle = '#ffffff';
 							ctx.fillText(spriteName, frame.x + 6, frame.y + textHeight + 4);
-						} else if (spriteWidth > 30 && spriteHeight > 15) {
-							// For medium sprites, just draw a shorter version of the name
-							const shortName =
-								spriteName.length > 8 ? spriteName.substring(0, 8) + '...' : spriteName;
-							const shortTextWidth = ctx.measureText(shortName).width;
-
-							if (spriteWidth > shortTextWidth + 8) {
+						} else {
+							// Small: use number
+							const legendNum = localNumLookup[spriteName];
+							if (legendNum) {
 								ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-								ctx.fillRect(frame.x + 2, frame.y + 2, shortTextWidth + 6, textHeight + 4);
-								ctx.fillStyle = '#ffffff';
-								ctx.fillText(shortName, frame.x + 5, frame.y + textHeight + 2);
+								ctx.fillRect(frame.x + 2, frame.y + 2, fontSize + 8, textHeight + 6);
+
+								ctx.fillStyle = '#ffff99';
+								ctx.font = `bold ${fontSize}px Inter`;
+								ctx.fillText(legendNum.toString(), frame.x + 8, frame.y + textHeight + 4);
 							}
 						}
-						// For very small sprites, skip the label entirely
-
 						processed++;
 						updateProgress(
 							25 + (processed / sprites.length) * 65,
 							`Labeling sprite ${processed}/${sprites.length}...`
 						);
+					}
+
+					// Draw legend at the bottom if needed
+					if (legendItems.length > 0) {
+						ctx.save();
+						ctx.fillStyle = '#222';
+						ctx.fillRect(0, jsonData.meta.size.h, canvas.width, legendHeight);
+						ctx.fillStyle = '#fff';
+						ctx.font = 'bold 16px Inter';
+						ctx.fillText('Legend:', 16, jsonData.meta.size.h + 24);
+
+						ctx.font = '14px Inter';
+						legendItems.forEach((item, idx) => {
+							ctx.fillStyle = '#ffff99';
+							ctx.fillText(item.num.toString(), 24, jsonData.meta.size.h + 48 + idx * 18);
+							ctx.fillStyle = '#fff';
+							ctx.fillText(': ' + item.name, 48, jsonData.meta.size.h + 48 + idx * 18);
+						});
+						ctx.restore();
 					}
 
 					// Download
@@ -1238,6 +1266,7 @@
 					setButtonLoading(labelBtn, false);
 				}
 			}
+
 			async function cutSpritesheet() {
 				const cutBtn = document.getElementById('cutBtn');
 				setButtonLoading(cutBtn, true);
